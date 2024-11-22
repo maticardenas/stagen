@@ -1,0 +1,2 @@
+# stagen
+Static site generator
