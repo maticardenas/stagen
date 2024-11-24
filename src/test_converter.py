@@ -1,6 +1,6 @@
 
 import unittest
-from converter import text_node_to_html_node, split_nodes_delimiter
+from converter import split_node_images, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links
 from textnode import TextNode, TextType
 
 class TestConverter(unittest.TestCase):
@@ -33,3 +33,43 @@ class TestConverter(unittest.TestCase):
         old_nodes = [TextNode("This is a text node with a **bold text", TextType.TEXT)]
         with self.assertRaises(Exception):
             split_nodes_delimiter(old_nodes, "**", TextType.BOLD)
+
+    def test_extract_markdown_images(self):
+        text = "This is a text with an image ![alt text](https://example.com/image.png)"
+        images = extract_markdown_images(text)
+        self.assertEqual(images, [("alt text", "https://example.com/image.png")])
+
+    def test_extract_markdown_links(self):
+        text = "This is a text with a link [link text](https://example.com)"
+        links = extract_markdown_links(text)
+        self.assertEqual(links, [("link text", "https://example.com")])
+
+    def test_split_node_images(self):
+        old_nodes = [TextNode("This is a text with an image ![alt text](https://example.com/image.png)", TextType.TEXT)]
+        new_nodes = split_node_images(old_nodes)
+        self.assertEqual(
+            new_nodes, 
+            [
+                TextNode("This is a text with an image ", TextType.TEXT), 
+                TextNode("alt text", TextType.IMAGE, "https://example.com/image.png"), 
+            ]
+        )
+
+    def test_split_node_images_multiple_images(self):
+        old_nodes = [TextNode("This is a text with an image ![alt text](https://example.com/image.png) and another ![alt text 2](https://example.com/image2.png)", TextType.TEXT)]
+        new_nodes = split_node_images(old_nodes)
+        self.assertEqual(
+            new_nodes, 
+            [
+                TextNode("This is a text with an image ", TextType.TEXT), 
+                TextNode("alt text", TextType.IMAGE, "https://example.com/image.png"), 
+                TextNode(" and another ", TextType.TEXT), 
+                TextNode("alt text 2", TextType.IMAGE, "https://example.com/image2.png"), 
+            ]
+        )
+    
+    def test_split_node_images_no_image(self):
+        old_nodes = [TextNode("This is a text with no image", TextType.TEXT)]
+        new_nodes = split_node_images(old_nodes)
+        self.assertEqual(new_nodes, [TextNode("This is a text with no image", TextType.TEXT)])
+
