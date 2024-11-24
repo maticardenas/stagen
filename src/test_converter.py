@@ -1,6 +1,6 @@
 
 import unittest
-from converter import split_node_images, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links
+from converter import split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links
 from textnode import TextNode, TextType
 
 class TestConverter(unittest.TestCase):
@@ -73,3 +73,32 @@ class TestConverter(unittest.TestCase):
         new_nodes = split_node_images(old_nodes)
         self.assertEqual(new_nodes, [TextNode("This is a text with no image", TextType.TEXT)])
 
+    
+    def test_split_node_links(self):
+        old_nodes = [TextNode("This is a text with a link [link text](https://example.com)", TextType.TEXT)]
+        new_nodes = split_node_links(old_nodes)
+        self.assertEqual(
+            new_nodes, 
+            [
+                TextNode("This is a text with a link ", TextType.TEXT), 
+                TextNode("link text", TextType.LINK, "https://example.com"), 
+            ]
+        )
+    
+    def test_split_node_links_with_multiple_links(self):
+        old_nodes = [TextNode("This is a text with a link [link text](https://example.com) and another [link text 2](https://example.com/2)", TextType.TEXT)]
+        new_nodes = split_node_links(old_nodes)
+        self.assertEqual(
+            new_nodes, 
+            [
+                TextNode("This is a text with a link ", TextType.TEXT), 
+                TextNode("link text", TextType.LINK, "https://example.com"), 
+                TextNode(" and another ", TextType.TEXT), 
+                TextNode("link text 2", TextType.LINK, "https://example.com/2"), 
+            ]
+        )
+        
+    def test_split_node_links_no_link(self):
+        old_nodes = [TextNode("This is a text with no link", TextType.TEXT)]
+        new_nodes = split_node_links(old_nodes)
+        self.assertEqual(new_nodes, [TextNode("This is a text with no link", TextType.TEXT)])

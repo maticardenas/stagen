@@ -63,6 +63,29 @@ def split_node_images(old_nodes: list[TextNode]) -> list[TextNode]:
     return new_nodes
 
 
+def split_node_links(old_nodes: list[TextNode]) -> list[TextNode]:
+    new_nodes = []
+    for node in old_nodes:
+        if node.text_type.value != TextType.TEXT.value:
+            new_nodes.append(node)
+            continue
+        
+        split_by_link = re.split(r"\[([^\]]*)\]\(([^)]*)\)", node.text)
+
+        if len(split_by_link) == 1:
+            print("No link found, returning the same node.")
+            new_nodes.append(node)
+        else:
+            for i, text in enumerate(split_by_link):
+                if i % 3 == 0 and text != "":
+                    new_nodes.append(TextNode(text, TextType.TEXT))
+                elif i % 3 == 1:
+                    new_nodes.append(TextNode(text, TextType.LINK, split_by_link[i + 1]))
+                else:
+                    continue
+
+    return new_nodes
+
 def split_by_image(text: str) -> list[str]:
     return re.split(r"!\[([^\]]*)\]\(([^)]*)\)", text)
 
