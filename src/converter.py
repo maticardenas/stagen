@@ -23,19 +23,20 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
         if node.text_type.value != TextType.TEXT.value:
             new_nodes.append(node)
             continue
-                       
+        
         if node.text.count(delimiter) > 1:
             split_text = node.text.split(delimiter)
             for i, text in enumerate(split_text):
-                if i % 2 == 0:
-                    new_nodes.append(TextNode(text, TextType.TEXT))
-                else:
-                    new_nodes.append(TextNode(text, text_type))
+                if text != "":
+                    if i % 2 == 0:
+                        new_nodes.append(TextNode(text, TextType.TEXT))
+                    else:
+                        new_nodes.append(TextNode(text, text_type))
         elif node.text.count(delimiter) == 1:
             raise Exception("delimiter should have a matching closing one.")
         else:
-            print("No delimiter found, returning the same node.")
-            return old_nodes
+            print("No delimiter found, adding the same node.")
+            new_nodes.append(node)
         
     return new_nodes
 
@@ -86,6 +87,17 @@ def split_node_links(old_nodes: list[TextNode]) -> list[TextNode]:
 
     return new_nodes
 
+def text_to_nodes(text: str) -> list[TextNode]:
+    nodes = [TextNode(text, TextType.TEXT)]
+    nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
+    nodes = split_nodes_delimiter(nodes, "*", TextType.ITALIC)
+    nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
+    nodes = split_node_images(nodes)
+    nodes = split_node_links(nodes)
+
+    return nodes
+
+
 def split_by_image(text: str) -> list[str]:
     return re.split(r"!\[([^\]]*)\]\(([^)]*)\)", text)
 
@@ -104,3 +116,4 @@ def extract_markdown_links(text: str) -> list[tuple]:
         links.append((match.group(1), match.group(2)))
     
     return links
+

@@ -1,6 +1,6 @@
 
 import unittest
-from converter import split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links
+from converter import split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_nodes
 from textnode import TextNode, TextType
 
 class TestConverter(unittest.TestCase):
@@ -102,3 +102,37 @@ class TestConverter(unittest.TestCase):
         old_nodes = [TextNode("This is a text with no link", TextType.TEXT)]
         new_nodes = split_node_links(old_nodes)
         self.assertEqual(new_nodes, [TextNode("This is a text with no link", TextType.TEXT)])
+    
+    def test_text_to_nodes(self):
+        text =  """This is a text with a link [link text](https://example.com) and an image ![alt text](https://example.com),
+            and a **bold** text, also you can see *italic* text, and finally a `code` text."""
+        
+        nodes = text_to_nodes(text)
+        assert nodes == [
+            TextNode("This is a text with a link ", TextType.TEXT), 
+            TextNode("link text", TextType.LINK, "https://example.com"), 
+            TextNode(" and an image ", TextType.TEXT), 
+            TextNode("alt text", TextType.IMAGE, "https://example.com"), 
+            TextNode(",\n            and a ", TextType.TEXT), 
+            TextNode("bold", TextType.BOLD), 
+            TextNode(" text, also you can see ", TextType.TEXT), 
+            TextNode("italic", TextType.ITALIC), 
+            TextNode(" text, and finally a ", TextType.TEXT), 
+            TextNode("code", TextType.CODE), 
+            TextNode(" text.", TextType.TEXT)
+        ]
+
+    def test_text_to_nodes_only_text(self):
+        text = "This is a text"
+        nodes = text_to_nodes(text)
+        assert nodes == [TextNode("This is a text", TextType.TEXT)]
+    
+    def test_text_to_nodes_only_bold(self):
+        text = "**This is a bold text**"
+        nodes = text_to_nodes(text)
+        assert nodes == [TextNode("This is a bold text", TextType.BOLD)]
+    
+    def test_text_to_nodes_empty_text(self):
+        text = ""
+        nodes = text_to_nodes(text)
+        assert nodes == [TextNode("", TextType.TEXT)]
