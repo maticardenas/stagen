@@ -1,6 +1,6 @@
 
 import unittest
-from converter import split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_nodes
+from converter import block_to_block_type, markdown_to_blocks, split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_nodes
 from textnode import TextNode, TextType
 
 class TestConverter(unittest.TestCase):
@@ -136,3 +136,27 @@ class TestConverter(unittest.TestCase):
         text = ""
         nodes = text_to_nodes(text)
         assert nodes == [TextNode("", TextType.TEXT)]
+
+    def test_markdown_to_blocks(self):
+        markdown = """# This is a heading
+
+This is a paragraph of text. It has some **bold** and *italic* words inside of it.
+
+* This is the first list item in a list block
+* This is a list item
+* This is another list item"""
+
+        texts = markdown_to_blocks(markdown)
+        assert texts == [
+            "# This is a heading",
+            "This is a paragraph of text. It has some **bold** and *italic* words inside of it.",
+            "* This is the first list item in a list block\n* This is a list item\n* This is another list item"
+        ]
+
+    def test_block_to_block_type(self):
+        self.assertEqual(block_to_block_type("# This is a heading"), "heading")
+        self.assertEqual(block_to_block_type("```This is a codeblock```"), "codeblock")
+        self.assertEqual(block_to_block_type("> This is a quote"), "quote")
+        self.assertEqual(block_to_block_type("- This is an unordered list"), "unordered_list")
+        self.assertEqual(block_to_block_type("1. This is an ordered list"), "ordered_list")
+        self.assertEqual(block_to_block_type("This is a paragraph"), "paragraph")

@@ -3,6 +3,8 @@ from src.htmlnode import HTMLNode, LeafNode
 from src.textnode import TextNode, TextType
 import re
 
+from utils import is_markdown_codeblock, is_markdown_heading, is_markdown_ordered_list
+
 
 def text_node_to_html_node(text_node: TextNode) -> LeafNode:
     leaf_node_action = {
@@ -117,3 +119,23 @@ def extract_markdown_links(text: str) -> list[tuple]:
     
     return links
 
+
+def block_to_block_type(block: str) -> str:
+
+    if is_markdown_heading(block):
+        return "heading"
+    elif is_markdown_codeblock(block):
+        return "codeblock"
+    elif block.startswith(">"):
+        return "quote"
+    elif block.startswith("- ") or block.startswith("* "):
+        return "unordered_list" 
+    elif is_markdown_ordered_list(block):
+        return "ordered_list"
+    else:
+        return "paragraph"
+
+
+def markdown_to_blocks(markdown: str) -> list[str]:
+    split_markdown = markdown.split("\n\n")
+    return [markdown_block.strip() for markdown_block in split_markdown]
