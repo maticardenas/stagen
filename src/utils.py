@@ -1,3 +1,5 @@
+from pathlib import Path
+import shutil
 import re
 
 
@@ -35,3 +37,24 @@ def is_markdown_ordered_list(text: str) -> bool:
             return False
     
     return True
+
+def remove_everything_dir(dir: Path) -> None:
+    """ Removes everything in a directory, including all its subdirectories and files """
+    for item in dir.iterdir():
+        if item.is_dir():
+            remove_everything_dir(item)
+        else:
+            item.unlink()
+
+def copy_dir_content(src: Path, dest: Path) -> None:
+    """ Copies a directory content, including all its subdirectories and files, to another directory """ 
+    dest.mkdir(exist_ok=True)
+    # remove everything in the destination directory
+    remove_everything_dir(dest)
+
+    for item in src.iterdir():
+        if item.is_dir():
+            copy_dir_content(item, dest / item.name)
+        else:
+            item_dest = dest / item.name
+            shutil.copy(item, item_dest)
