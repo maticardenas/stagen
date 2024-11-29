@@ -1,6 +1,6 @@
 
 import unittest
-from converter import block_to_block_type, markdown_to_blocks, split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_nodes
+from converter import block_to_block_type, markdown_to_blocks, markdown_to_html_node, split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_nodes
 from textnode import TextNode, TextType
 
 class TestConverter(unittest.TestCase):
@@ -160,3 +160,37 @@ This is a paragraph of text. It has some **bold** and *italic* words inside of i
         self.assertEqual(block_to_block_type("- This is an unordered list"), "unordered_list")
         self.assertEqual(block_to_block_type("1. This is an ordered list"), "ordered_list")
         self.assertEqual(block_to_block_type("This is a paragraph"), "paragraph")
+
+    def test_markdown_to_html_node(self):
+        markdown = """# This is a heading\n\nThis is a paragraph of text. It has some **bold** and *italic* words inside of it."""
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.tag, "div")
+        self.assertEqual(html_node.props, {})
+        self.assertEqual(len(html_node.children), 2)
+        self.assertEqual(html_node.children[0].tag, "h1")
+        self.assertEqual(html_node.children[1].tag, "p")    
+
+    def test_markdown_to_html_node_code_and_blockquote(self):
+        markdown = """```This is a codeblock```\n\n> This is a quote"""
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.tag, "div")
+        self.assertEqual(html_node.props, {})
+        self.assertEqual(len(html_node.children), 2)
+        self.assertEqual(html_node.children[0].tag, "pre")
+        self.assertEqual(html_node.children[1].tag, "blockquote")
+
+    def test_markdown_to_html_node_unordered_list(self):
+        markdown = """- This is the first list item in a list block\n- This is a list item\n- This is another list item"""
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.tag, "div")
+        self.assertEqual(html_node.props, {})
+        self.assertEqual(len(html_node.children), 1)
+        self.assertEqual(html_node.children[0].tag, "ul")
+
+    def test_markdown_to_html_node_ordered_list(self):
+        markdown = """1. This is the first list item in a list block\n2. This is a list item\n3. This is another list item"""
+        html_node = markdown_to_html_node(markdown)
+        self.assertEqual(html_node.tag, "div")
+        self.assertEqual(html_node.props, {})
+        self.assertEqual(len(html_node.children), 1)
+        self.assertEqual(html_node.children[0].tag, "ol")

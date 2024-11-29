@@ -1,5 +1,5 @@
 
-from src.htmlnode import HTMLNode, LeafNode
+from src.htmlnode import HTMLNode, LeafNode, ParentNode
 from src.textnode import TextNode, TextType
 import re
 
@@ -121,7 +121,6 @@ def extract_markdown_links(text: str) -> list[tuple]:
 
 
 def block_to_block_type(block: str) -> str:
-
     if is_markdown_heading(block):
         return "heading"
     elif is_markdown_codeblock(block):
@@ -139,3 +138,44 @@ def block_to_block_type(block: str) -> str:
 def markdown_to_blocks(markdown: str) -> list[str]:
     split_markdown = markdown.split("\n\n")
     return [markdown_block.strip() for markdown_block in split_markdown]
+
+
+def text_to_children(text: str) -> list[HTMLNode]:
+    nodes = text_to_nodes(text)
+    children = [text_node_to_html_node(node) for node in nodes]
+    return children
+
+
+def markdown_to_html_node(markdown: str) -> HTMLNode:
+    blocks = markdown_to_blocks(markdown)
+    html_nodes = []
+    for block in blocks:
+        block_type = block_to_block_type(block)
+        if block_type == "heading":
+            heading_length = len(block.split(" ")[0])
+            node = ParentNode(f"h{heading_length}", block[heading_length + 1:])
+            children = text_to_children(block[heading_length + 1:])
+            node.children = children
+            html_nodes.append(node)
+        elif block_type == "codeblock":
+            node = LeafNode("pre", f"<code>{block[3:-3]}</code>")
+            html_nodes.append(node)
+        elif block_type == "quote":
+            block_text = block.split("> ")[1]
+            node = ParentNode(f"blockquote", block_text)
+            children = text_to_children(block_text)
+            node.children = children
+            html_nodes.append(node)
+        elif block_type == "unordered_list":
+            tagged_unordered_list_items = "".join([f"<li>{item[2:]}</li>" for item in block.split("\n")])
+            html_nodes.append(HTMLNode("ul", tagged_unordered_list_items))
+        elif block_type == "ordered_list":
+            tagged_ordered_list_items = "".join([f"<li>{item[2:]}</li>" for item in block.split("\n")])
+            html_nodes.append(HTMLNode("ol", tagged_ordered_list_items))
+        elif block_type == "paragraph":
+            node = ParentNode("p", block)
+            children = text_to_children(block)
+            node.children = children
+            html_nodes.append(node)
+
+    return ParentNode("div", html_nodes)
