@@ -1,6 +1,6 @@
 
 import unittest
-from converter import block_to_block_type, markdown_to_blocks, markdown_to_html_node, split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_nodes
+from converter import block_to_block_type, extract_title, markdown_to_blocks, markdown_to_html_node, split_node_images, split_node_links, text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_nodes
 from textnode import TextNode, TextType
 
 class TestConverter(unittest.TestCase):
@@ -25,6 +25,18 @@ class TestConverter(unittest.TestCase):
             [
                 TextNode("This is a text node with a ", TextType.TEXT), 
                 TextNode("bold", TextType.BOLD), 
+                TextNode(" text", TextType.TEXT)
+            ]
+        )
+    
+    def test_split_nodes_delimiter_italic(self):
+        old_nodes = [TextNode("This is a text node with a *italic* text", TextType.TEXT)]
+        new_nodes = split_nodes_delimiter(old_nodes, "*", TextType.ITALIC)
+        self.assertEqual(
+            new_nodes, 
+            [
+                TextNode("This is a text node with a ", TextType.TEXT), 
+                TextNode("italic", TextType.ITALIC), 
                 TextNode(" text", TextType.TEXT)
             ]
         )
@@ -194,3 +206,8 @@ This is a paragraph of text. It has some **bold** and *italic* words inside of i
         self.assertEqual(html_node.props, {})
         self.assertEqual(len(html_node.children), 1)
         self.assertEqual(html_node.children[0].tag, "ol")
+    
+    def test_extract_title(self):
+        markdown = """# This is a heading\n\nThis is a paragraph of text. It has some **bold** and *italic* words inside of it."""
+        title = extract_title(markdown)
+        self.assertEqual(title, "This is a heading")

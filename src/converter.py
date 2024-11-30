@@ -1,6 +1,7 @@
 
-from src.htmlnode import HTMLNode, LeafNode, ParentNode
-from src.textnode import TextNode, TextType
+from pathlib import Path
+from htmlnode import HTMLNode, LeafNode, ParentNode
+from textnode import TextNode, TextType
 import re
 
 from utils import is_markdown_codeblock, is_markdown_heading, is_markdown_ordered_list
@@ -8,12 +9,12 @@ from utils import is_markdown_codeblock, is_markdown_heading, is_markdown_ordere
 
 def text_node_to_html_node(text_node: TextNode) -> LeafNode:
     leaf_node_action = {
-        TextType.TEXT.value: LeafNode(None, text_node.text),
-        TextType.BOLD.value: LeafNode("b", text_node.text),
-        TextType.ITALIC.value: LeafNode("i", text_node.text),
+        TextType.TEXT.value: LeafNode(None, value=text_node.text),
+        TextType.BOLD.value: LeafNode("b", value=text_node.text),
+        TextType.ITALIC.value: LeafNode("i", value=text_node.text),
         TextType.LINK.value: LeafNode(tag="a", value=text_node.text, props={"href": text_node.url}),
         TextType.IMAGE.value: LeafNode(tag="img", value="", props={"src": text_node.url, "alt": text_node.text}),
-        TextType.CODE.value: LeafNode("code", text_node.text),
+        TextType.CODE.value: LeafNode("code", value=text_node.text),
     }
 
     return leaf_node_action[text_node.text_type.value]
@@ -95,7 +96,10 @@ def text_to_nodes(text: str) -> list[TextNode]:
     nodes = split_nodes_delimiter(nodes, "*", TextType.ITALIC)
     nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
     nodes = split_node_images(nodes)
+        
     nodes = split_node_links(nodes)
+
+
 
     return nodes
 
@@ -167,11 +171,19 @@ def markdown_to_html_node(markdown: str) -> HTMLNode:
             node.children = children
             html_nodes.append(node)
         elif block_type == "unordered_list":
-            tagged_unordered_list_items = "".join([f"<li>{item[2:]}</li>" for item in block.split("\n")])
-            html_nodes.append(HTMLNode("ul", tagged_unordered_list_items))
+            all_children = []
+            for item in block.split("\n"):
+                children = text_to_children(item[2:])
+                all_children.append(ParentNode("li", children))            
+            node = ParentNode("ul", all_children)
+            html_nodes.append(node)
         elif block_type == "ordered_list":
-            tagged_ordered_list_items = "".join([f"<li>{item[2:]}</li>" for item in block.split("\n")])
-            html_nodes.append(HTMLNode("ol", tagged_ordered_list_items))
+            all_children = []
+            for item in block.split("\n"):
+                children = text_to_children(item[3:])
+                all_children.append(ParentNode("li", children))
+            node = ParentNode(tag="ol", children=all_children)
+            html_nodes.append(node)
         elif block_type == "paragraph":
             node = ParentNode("p", block)
             children = text_to_children(block)
@@ -179,3 +191,46 @@ def markdown_to_html_node(markdown: str) -> HTMLNode:
             html_nodes.append(node)
 
     return ParentNode("div", html_nodes)
+
+def extract_title(markdown: str) -> str:
+    blocks = markdown_to_blocks(markdown)
+    for block in blocks:
+        if is_markdown_heading(block):
+            return block.split("# ")[1]
+
+    raise Exception("No title found in the markdown")
+
+
+def generate_page(from_path: Path, template_path: Path, dest_path: Path) -> None:
+    print(f"Generating page from {from_path} to {dest_path}, using template {template_path}")
+    
+    markdown = from_path.read_text()
+    template = template_path.read_text()
+
+    title = extract_title(markdown)
+    html_node = markdown_to_html_node(markdown)
+    html_text = html_node.to_html()
+    
+    replaced_template_text = template.replace("{{ Title }}", title).replace("{{ Content }}", html_text)
+
+    dest_path.write_text(replaced_template_text)
+
+
+def generate_pages_recursively(dir_path_content: Path, template_path: Path, dest_dir_path: Path) -> None:
+    for item in dir_path_content.iterdir():
+        if item.is_dir():
+            dest_dir_sub_dir = dest_dir_path / item.name
+            dest_dir_sub_dir.mkdir(exist_ok=True)
+            generate_pages_recursively(
+                dir_path_content=item, 
+                template_path=template_path, 
+                dest_dir_path=dest_dir_sub_dir
+            )
+        else:
+            if item.suffix == ".md":
+                dest_path = dest_dir_path / item.name.replace(".md", ".html")
+                generate_page(
+                    from_path=item, 
+                    template_path=template_path, 
+                    dest_path=dest_path
+                )

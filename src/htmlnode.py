@@ -20,11 +20,11 @@ class HTMLNode:
 class LeafNode(HTMLNode):
 
     def __init__(self, tag: str | None, value: str, props: dict = None):
+        if not value and tag != "img":
+            raise ValueError("LeafNode must have a value")
         super().__init__(tag=tag, value=value, props=props)
 
     def to_html(self) -> str:
-        if not self.value:
-            raise ValueError("LeafNode value cannot be empty")  
         if self.tag is None:
             return self.value
         

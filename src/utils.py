@@ -38,6 +38,7 @@ def is_markdown_ordered_list(text: str) -> bool:
     
     return True
 
+
 def remove_everything_dir(dir: Path) -> None:
     """ Removes everything in a directory, including all its subdirectories and files """
     for item in dir.iterdir():
@@ -45,6 +46,7 @@ def remove_everything_dir(dir: Path) -> None:
             remove_everything_dir(item)
         else:
             item.unlink()
+
 
 def copy_dir_content(src: Path, dest: Path) -> None:
     """ Copies a directory content, including all its subdirectories and files, to another directory """ 
